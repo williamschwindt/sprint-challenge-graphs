@@ -31,7 +31,7 @@ traversal_path = []
 visited = set()
 previously_visited_direction = None
 
-def dft(first_move = False):
+def random_direction(first_move = False):
     global previously_visited_direction
     #if first move is true
     if first_move:
@@ -79,30 +79,75 @@ def dft(first_move = False):
             #return false
             return False
 
+def bft_search():
+    global visited
+    starting_room = player.current_room
+    #create an empty queue and enqueue the starting room as a list
+    path_queue = []
+    path_queue.append([starting_room])
+    #while the queue isnt empty
+    while len(path_queue) > 0:
+        #get the current path
+        cur_path = path_queue[0]
+        #remove from queue
+        path_queue.pop(0)
+        #set current room to last room in cur path
+        cur_room = cur_path[-1]
+        #check if that room has been visited
+        if cur_room not in visited:
+            #if not return the path to the room
+            backtrack_path = []
+            for room in cur_path:
+                backtrack_path.append(room.id)
+            return backtrack_path
+        #if it has been visited add path to neighbors to queue
+        if cur_room in visited:
+            for direction in cur_room.get_exits():
+                new_path = list(cur_path)
+                new_path.append(cur_room.get_room_in_direction(direction))
+                path_queue.append(new_path)
+
 def adv():
     print(player.current_room)
     #add cur room to visited
     visited.add(player.current_room)
-    #call dft with first move set to true
-    direction = dft(True)
+    #call random_direction with first move set to true
+    direction = random_direction(True)
     traversal_path.append(direction)
     player.travel(direction)
 
     playing = True
+    dft = True
+    bft = True
     #while loop
     while playing:
-        print(player.current_room)
-        visited.add(player.current_room)
-        #call dft
-        direction = dft()
-        #check if there is a unexplored path
-        #if not stop dft
-        if direction == False:
+        #dft traversal
+        while dft:
+            print(player.current_room)
+            visited.add(player.current_room)
+            #call random_direction
+            direction = random_direction()
+            #check if there is a unexplored path
+            #if not stop random_direction
+            if direction == False:
+                dft = False
+            #if there is then travel
+            else:
+                traversal_path.append(direction)
+                player.travel(direction)
+
+        #bft traversal
+        while bft:
+            print(player.current_room)
+            visited.add(player.current_room)
+            #call bft search to find path to nearest unknown location
+            backtrack_path = bft_search()
+            print('bft', backtrack_path)
+            bft = False
             playing = False
-        #if there is then travel
-        else:
-            traversal_path.append(direction)
-            player.travel(direction)
+            #travel back to that locaiton
+            #start dft again
+
 
 adv()
 
