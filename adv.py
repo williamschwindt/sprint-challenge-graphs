@@ -96,9 +96,29 @@ def bft_search():
         #check if that room has been visited
         if cur_room not in visited:
             #if not return the path to the room
+            cur_path.pop(0)
             backtrack_path = []
-            for room in cur_path:
-                backtrack_path.append(room.id)
+
+
+            for i in range(0, len(cur_path)):
+                if starting_room.get_room_in_direction('n') == cur_path[i]:
+                    starting_room = cur_path[i]
+                    backtrack_path.append('n')
+                elif starting_room.get_room_in_direction('e') == cur_path[i]:
+                    starting_room = cur_path[i]
+                    backtrack_path.append('e')
+                elif starting_room.get_room_in_direction('s') == cur_path[i]:
+                    starting_room = cur_path[i]
+                    backtrack_path.append('s')
+                elif starting_room.get_room_in_direction('w') == cur_path[i]:
+                    starting_room = cur_path[i]
+                    backtrack_path.append('w')
+
+
+
+
+
+
             return backtrack_path
         #if it has been visited add path to neighbors to queue
         if cur_room in visited:
