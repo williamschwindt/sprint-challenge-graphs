@@ -12,9 +12,9 @@ world = World()
 # You may uncomment the smaller graphs for development and testing purposes.
 # map_file = "maps/test_line.txt"
 # map_file = "maps/test_cross.txt"
-map_file = "maps/test_loop.txt"
+# map_file = "maps/test_loop.txt"
 # map_file = "maps/test_loop_fork.txt"
-# map_file = "maps/main_maze.txt"
+map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
 room_graph=literal_eval(open(map_file, "r").read())
@@ -51,10 +51,12 @@ def random_direction(first_move = False):
 
     #if not first move 
     else:
+        print('prev_direction', previously_visited_direction)
         #find all paths
         paths = player.current_room.get_exits()
         #remove the prev_direction from paths
-        paths.remove(previously_visited_direction)
+        if previously_visited_direction in paths:
+            paths.remove(previously_visited_direction)
         #remove the directions that would lead to a previously visited room
         for path in paths:
             if player.current_room.get_room_in_direction(path) in visited:
@@ -81,6 +83,7 @@ def random_direction(first_move = False):
 
 def bft_search():
     global visited
+    visited_paths = {}
     starting_room = player.current_room
     #create an empty queue and enqueue the starting room as a list
     path_queue = []
@@ -93,13 +96,14 @@ def bft_search():
         path_queue.pop(0)
         #set current room to last room in cur path
         cur_room = cur_path[-1]
+        visited_paths[cur_room] = cur_path
         #check if that room has been visited
         if cur_room not in visited:
             #if not return the path to the room
             cur_path.pop(0)
             backtrack_path = []
 
-
+            #add directions to find first unknown room
             for i in range(0, len(cur_path)):
                 if starting_room.get_room_in_direction('n') == cur_path[i]:
                     starting_room = cur_path[i]
@@ -114,18 +118,15 @@ def bft_search():
                     starting_room = cur_path[i]
                     backtrack_path.append('w')
 
-
-
-
-
-
             return backtrack_path
+
         #if it has been visited add path to neighbors to queue
         if cur_room in visited:
             for direction in cur_room.get_exits():
                 new_path = list(cur_path)
                 new_path.append(cur_room.get_room_in_direction(direction))
-                path_queue.append(new_path)
+                if new_path[-1] not in visited_paths:
+                    path_queue.append(new_path)
 
 def adv():
     print(player.current_room)
@@ -143,6 +144,7 @@ def adv():
     while playing:
         #dft traversal
         while dft:
+            bft = True
             print(player.current_room)
             visited.add(player.current_room)
             #call random_direction
@@ -163,10 +165,19 @@ def adv():
             #call bft search to find path to nearest unknown location
             backtrack_path = bft_search()
             print('bft', backtrack_path)
-            bft = False
-            playing = False
-            #travel back to that locaiton
-            #start dft again
+
+            if backtrack_path == None:
+                bft = False
+                playing = False
+            else:
+                #travel back to that locaiton
+                for direction in backtrack_path:
+                    player.travel(direction)
+                    traversal_path.append(direction)
+                    print(player.current_room)
+                #start dft again
+                bft = False
+                dft = True
 
 
 adv()
