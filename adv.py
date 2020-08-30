@@ -29,57 +29,25 @@ player = Player(world.starting_room)
 # traversal_path = ['n', 'n']
 traversal_path = []
 visited = set()
-previously_visited_direction = None
 
-def random_direction(first_move = False):
-    global previously_visited_direction
-    #if first move is true
-    if first_move:
-        #pick a random direction and add opposite direction to prev_visited_direciton
-        paths = player.current_room.get_exits()
-        path = random.choice(paths)
-        if path == 'n':
-            previously_visited_direction = 's'
-        elif path == 'e':
-            previously_visited_direction = 'w'
-        elif path == 's':
-            previously_visited_direction = 'n'
-        elif path == 'w':
-            previously_visited_direction = 'e'
-        #return direction
+def random_direction():
+    #find all paths
+    paths = player.current_room.get_exits()
+
+    #remove the directions that would lead to a previously visited room
+    new_paths = []
+    for path in paths:
+        if player.current_room.get_room_in_direction(path) not in visited:
+            new_paths.append(path)
+
+    #if paths > 0
+    if len(new_paths) > 0:
+        path = random.choice(new_paths)
+
         return path
-
-    #if not first move 
-    else:
-        print('prev_direction', previously_visited_direction)
-        #find all paths
-        paths = player.current_room.get_exits()
-        #remove the prev_direction from paths
-        if previously_visited_direction in paths:
-            paths.remove(previously_visited_direction)
-        #remove the directions that would lead to a previously visited room
-        for path in paths:
-            if player.current_room.get_room_in_direction(path) in visited:
-                paths.remove(path)
-        #if paths > 0
-        if len(paths) > 0:
-            #pick random path
-            path = random.choice(paths)
-            #set prev_direction to opposite of path
-            if path == 'n':
-                previously_visited_direction = 's'
-            elif path == 'e':
-                previously_visited_direction = 'w'
-            elif path == 's':
-                previously_visited_direction = 'n'
-            elif path == 'w':
-                previously_visited_direction = 'e'
-            #return direction
-            return path
-        #if no paths
-        if len(paths) == 0:
-            #return false
-            return False
+    #if no new_paths
+    if len(new_paths) == 0:
+        return False
 
 def bft_search():
     global visited
@@ -96,6 +64,7 @@ def bft_search():
         path_queue.pop(0)
         #set current room to last room in cur path
         cur_room = cur_path[-1]
+        #add path to visited_paths to prevent infinite loop
         visited_paths[cur_room] = cur_path
         #check if that room has been visited
         if cur_room not in visited:
@@ -125,28 +94,23 @@ def bft_search():
             for direction in cur_room.get_exits():
                 new_path = list(cur_path)
                 new_path.append(cur_room.get_room_in_direction(direction))
+                #make sure path has not been checked already
                 if new_path[-1] not in visited_paths:
                     path_queue.append(new_path)
 
 def adv():
-    print(player.current_room)
     #add cur room to visited
     visited.add(player.current_room)
-    #call random_direction with first move set to true
-    direction = random_direction(True)
-    traversal_path.append(direction)
-    player.travel(direction)
 
     playing = True
     dft = True
     bft = True
-    #while loop
+    #main game loops
     while playing:
+
         #dft traversal
         while dft:
             bft = True
-            print(player.current_room)
-            visited.add(player.current_room)
             #call random_direction
             direction = random_direction()
             #check if there is a unexplored path
@@ -157,14 +121,12 @@ def adv():
             else:
                 traversal_path.append(direction)
                 player.travel(direction)
+                visited.add(player.current_room)
 
         #bft traversal
         while bft:
-            print(player.current_room)
-            visited.add(player.current_room)
             #call bft search to find path to nearest unknown location
             backtrack_path = bft_search()
-            print('bft', backtrack_path)
 
             if backtrack_path == None:
                 bft = False
@@ -173,12 +135,11 @@ def adv():
                 #travel back to that locaiton
                 for direction in backtrack_path:
                     player.travel(direction)
+                    visited.add(player.current_room)
                     traversal_path.append(direction)
-                    print(player.current_room)
                 #start dft again
                 bft = False
                 dft = True
-
 
 adv()
 
